@@ -1,22 +1,24 @@
-import axios from 'axios';
-
-const API_URL = 'https://api.score.gx.uz/api/'; // Replace with your API base URL
-
+import axios from "axios";
+import { URL } from "./const";
+import * as Secure from 'expo-secure-store';
 const api = axios.create({
-    baseURL: API_URL,
+    baseURL: URL,
     headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
     },
 });
 
-export const login = async (body) => {
-    try {
-        const response = await api.post('auth/login',  body);
-        console.log(response.data,'data');
-        return response.data;
-    } catch (error) {
-        throw error.response ? error.response.data : new Error('Network Error');
+api.interceptors.request.use(
+    async (config) => {
+        const Token = await Secure.getItemAsync('accessToken');
+        if (Token) {
+            config.headers.Authorization = `Bearer ${Token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
     }
-};
+);
 
 export default api;
