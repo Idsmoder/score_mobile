@@ -1,74 +1,124 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import {FlatList, StyleSheet, Text, View, Modal,Animated, SafeAreaView,TouchableOpacity,Dimensions} from 'react-native';
+import api from "@/config/api";
+import {useEffect, useState} from "react";
+import {router} from "expo-router";
+import ModalComponent from "@/components/ModalComponent";
+const { height } = Dimensions.get('window');
+ const HomeScreen = () => {
+    const [list, setList] = useState([]);
+     const [modalVisible, setModalVisible] = useState(false);
+     const [selectedItem, setSelectedItem] = useState(null);
+     const [slideAnim] = useState(new Animated.Value(height));
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+     const showModal = (item) => {
+         setSelectedItem(item);
+         setModalVisible(true);
+         Animated.timing(slideAnim, {
+             toValue: 0,
+             duration: 300,
+             useNativeDriver: true,
+         }).start();
+     };
 
-export default function HomeScreen() {
+     const hideModal = () => {
+         Animated.timing(slideAnim, {
+             toValue: height,
+             duration: 300,
+             useNativeDriver: true,
+         }).start(() => {
+             setModalVisible(false);
+             setSelectedItem(null);
+         });
+     };
+     const getList = async () => {
+         const response = await api.get('app/history/list');
+            setList(response.data.data);
+     }
+     useEffect(() => {
+            getList();
+     }, []);
+     const renderItem = ({ item }) => (
+         <TouchableOpacity onPress={() => showModal(item)}>
+         <View style={styles.item}>
+             <Text style={styles.title}>ID Пациента: {item.id}</Text>
+             <Text>Время приёма: {new Date(item.created_at).toLocaleString()}</Text>
+         </View>
+ </TouchableOpacity>
+     );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <SafeAreaView style={styles.container}>
+
+          <Text style={styles.header}>Информация о приёме пациента</Text>
+          <FlatList
+              data={list}
+              renderItem={renderItem}
+              keyExtractor={item => item.id.toString()}
+          />
+          <Modal animationType="none" transparent={true} visible={modalVisible} onRequestClose={hideModal}>
+              <ModalComponent modalVisible={modalVisible} hideModal={hideModal} slideAnim={slideAnim} item={selectedItem} />
+          </Modal>
+
+ </SafeAreaView>
   );
 }
+export default HomeScreen;
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+    container: {
+        flex: 1,
+        backgroundColor: '#E0F7FA',
+    },
+    button: {
+        padding: 10,
+        backgroundColor: '#2196F3',
+        borderRadius: 5,
+    },
+    buttonText: {
+        color: '#fff',
+    },
+    centeredView: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalView: {
+        width: '100%',
+        height: '90%',
+        backgroundColor: 'white',
+        borderTopLeftRadius: 10,
+        borderTopRightRadius: 10,
+        padding: 35,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    modalText: {
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    header: {
+        fontSize: 28,
+        textAlign: 'center',
+        marginVertical: 20,
+        color: '#01579B',
+    },
+    item: {
+        backgroundColor: '#81D4FA',
+        padding: 20,
+        marginVertical: 8,
+        marginHorizontal: 16,
+        borderRadius: 10,
+    },
+    title: {
+        fontSize: 24,
+        color: '#0277BD',
+    },
 });

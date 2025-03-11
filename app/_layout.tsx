@@ -1,6 +1,6 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import {Redirect, Stack} from 'expo-router';
+import {Redirect, router, Stack} from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -9,6 +9,7 @@ import * as SecureStore from 'expo-secure-store';
 import '../global.css';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import {any} from "prop-types";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -22,22 +23,26 @@ export default function RootLayout() {
 
   useEffect(() => {
     const checkToken = async () => {
-      const token = await SecureStore.getItemAsync('token');
-      setIsAuthenticated(!!token);
+        const token = await SecureStore.getItemAsync('accessToken');
+        if (token) {
+            setIsAuthenticated(true);
+        }
       if (loaded) {
-        SplashScreen.hideAsync();
+        await SplashScreen.hideAsync();
       }
     };
+    if (isAuthenticated) {
+      router.replace('(tabs)');
+    }else {
+        router.replace('(login)');
+    }
     checkToken();
   }, [loaded]);
   return (
       <ThemeProvider value={colorScheme === 'dark' ? DefaultTheme : DarkTheme}>
         <Stack>
-          {isAuthenticated ? (
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          ) : (
               <Stack.Screen name="(login)" options={{ headerShown: false }} />
-          )}
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

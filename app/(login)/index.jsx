@@ -1,31 +1,30 @@
 import {View, StyleSheet, TextInput, Text, Button, TouchableOpacity, Alert} from "react-native";
 import {useState} from "react";
 import axios from "axios";
-import { login } from '../../config/api';
+import {URL} from "../../config/const";
 import * as SecureStore from 'expo-secure-store';
-import {Redirect} from "expo-router";
+import {router} from "expo-router";
+
 
 
 export default function Login({ navigation }) {
-
-
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [password, setPassword] = useState('');
-
+    const [phoneNumber, setPhoneNumber] = useState("998911234569");
+    const [password, setPassword] = useState("12345678");
     const handleLogin = async () => {
-        try {
-            const body = {
-                phone: phoneNumber,
-                password,
-            }
-            const data = await login(body);
-            await SecureStore.setItemAsync('userToken', data.access_token);
-            navigation.navigate('(tabs)');
-        } catch (error) {
-            Alert.alert('Error', error.message || 'Failed to login');
+                try {
+                    const res = await axios(`${URL}auth/login`, {
+                        method: 'post',
+                        data: { phone: phoneNumber, password: password },
+                    })
+                    if (res.status === 200) {
+                        await SecureStore.setItemAsync('accessToken', res.data.access_token);
+                        router.replace('(tabs)');
+                    }
+                }
+                catch (error) {
+                    Alert.alert('Ошибка', 'Неверный номер телефона или пароль');
+                }
         }
-    };
-
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Вход</Text>
